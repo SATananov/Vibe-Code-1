@@ -1,12 +1,16 @@
+// =========================
+// Priority Planner — Eisenhower Matrix (BG/EN)
+// Vanilla JS, no dependencies
+// =========================
+
 const $ = (q, root = document) => root.querySelector(q);
-const $$ = (q, root = document) => Array.from(root.querySelectorAll(q));
 
-
+// Storage keys
 const LS_KEY = 'pp_tasks_v1';
 const THEME_KEY = 'pp_theme';
 const LANG_KEY = 'pp_lang';
 
-
+// I18N dictionary
 const I18N = {
   en: {
     ui: {
@@ -44,7 +48,7 @@ const I18N = {
       actionsTitles: {
         done: 'Mark done (Space / Enter)',
         move: 'Move across quadrants (← / →)',
-        del: 'Delete (Del)'
+        del:  'Delete (Del)'
       }
     },
     str: {
@@ -90,7 +94,7 @@ const I18N = {
       actionsTitles: {
         done: 'Маркирай като готова (Space / Enter)',
         move: 'Премести между квадранти (← / →)',
-        del: 'Изтрий (Del)'
+        del:  'Изтрий (Del)'
       }
     },
     str: {
@@ -102,27 +106,25 @@ const I18N = {
   }
 };
 
+// Language helpers (default EN)
+let LANG = localStorage.getItem(LANG_KEY) || 'en';
+const t = (path) => path.split('.').reduce((o, k) => (o && o[k] != null ? o[k] : ''), I18N[LANG]);
 
-let LANG = localStorage.getItem(LANG_KEY) || 'bg';
-const t = (path) => {
-  const parts = path.split('.');
-  return parts.reduce((acc, k) => (acc && acc[k] != null ? acc[k] : ''), I18N[LANG]);
-};
-
+// Utilities / storage
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const load = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } };
-const save = (tasks) => localStorage.setItem(LS_KEY, JSON.stringify(tasks));
+const save = (arr) => localStorage.setItem(LS_KEY, JSON.stringify(arr));
 
-
+// State
 let tasks = load();
 
-
+// Theme toggle
 const themeBtn = $('#themeBtn');
-const applyTheme = (theme) => {
-  document.documentElement.setAttribute('data-theme', theme);
-  themeBtn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+const applyTheme = (name) => {
+  document.documentElement.setAttribute('data-theme', name);
+  themeBtn.setAttribute('aria-pressed', name === 'dark' ? 'true' : 'false');
   themeBtn.title = t('ui.themeTitle');
-  localStorage.setItem(THEME_KEY, theme);
+  localStorage.setItem(THEME_KEY, name);
 };
 const savedTheme = localStorage.getItem(THEME_KEY);
 if (savedTheme) applyTheme(savedTheme);
@@ -131,19 +133,18 @@ themeBtn.addEventListener('click', () => {
   applyTheme(cur === 'light' ? 'dark' : 'light');
 });
 
-
+// Language toggle
 const langBtn = $('#langBtn');
 function applyLang(lang) {
-  LANG = lang;
-  localStorage.setItem(LANG_KEY, LANG);
+  LANG = lang; localStorage.setItem(LANG_KEY, LANG);
   document.documentElement.lang = LANG === 'bg' ? 'bg' : 'en';
   document.title = t('ui.title');
 
- 
+  // Header
   $('#appTitle').textContent = t('ui.title');
   $('#appSubtitle').textContent = t('ui.subtitle');
 
-
+  // Form
   $('#formTitle').textContent = t('ui.formTitle');
   $('#tipAdd').textContent = t('ui.tipAdd');
   $('#labelTitle').textContent = t('ui.labelTitle');
@@ -162,28 +163,21 @@ function applyLang(lang) {
   $('#q2t').textContent = t('ui.q2Title'); $('#q2hint').textContent = t('ui.q2Hint'); $('#q2e').textContent = t('ui.q2Empty');
   $('#q3t').textContent = t('ui.q3Title'); $('#q3hint').textContent = t('ui.q3Hint'); $('#q3e').textContent = t('ui.q3Empty');
 
- 
+  // Help
   $('#helpTitle').textContent = t('ui.helpTitle');
-  const helpList = $('#helpList');
-  helpList.innerHTML = '';
-  t('ui.helpList').forEach(html => {
-    const li = document.createElement('li');
-    li.innerHTML = html;
-    helpList.appendChild(li);
-  });
+  const helpList = $('#helpList'); helpList.innerHTML = '';
+  t('ui.helpList').forEach(html => { const li = document.createElement('li'); li.innerHTML = html; helpList.appendChild(li); });
 
- 
-  $('footer').textContent = t('ui.footer');
-
+  // Footer + Lang button
+  document.querySelector('footer').textContent = t('ui.footer');
   langBtn.textContent = t('ui.langBtnLabel');
   langBtn.title = t('ui.langBtnTitleTo');
 
-  
   render();
 }
 langBtn.addEventListener('click', () => applyLang(LANG === 'bg' ? 'en' : 'bg'));
 
-
+// Form refs
 const form = $('#taskForm');
 const titleInput = $('#title');
 const noteInput = $('#note');
@@ -193,69 +187,139 @@ const errMsg = $('#errMsg');
 const addBtn = $('#addBtn');
 const clearAllBtn = $('#clearAllBtn');
 
-const togglePressed = (btn) => {
-  const now = btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true';
-  btn.setAttribute('aria-pressed', now);
-};
+// Toggle buttons (aria-pressed)
+const togglePressed = (btn) => btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
 impBtn.addEventListener('click', () => togglePressed(impBtn));
 urgBtn.addEventListener('click', () => togglePressed(urgBtn));
 
-
+// Submit
 form.addEventListener('submit', (e) => {
   e.preventDefault();
-  const tval = titleInput.value.trim();
-  if (!tval) {
-    errMsg.textContent = t('str.pleaseTitle');
-    titleInput.focus();
-    return;
-  }
+  const val = titleInput.value.trim();
+  if (!val) { errMsg.textContent = t('str.pleaseTitle'); titleInput.focus(); return; }
   errMsg.textContent = '';
-  const task = {
+  tasks.push({
     id: uid(),
-    title: tval,
+    title: val,
     note: noteInput.value.trim(),
     imp: impBtn.getAttribute('aria-pressed') === 'true',
     urg: urgBtn.getAttribute('aria-pressed') === 'true',
     done: false
-  };
-  tasks.push(task);
-  save(tasks);
-  render();
-  form.reset();
-  impBtn.setAttribute('aria-pressed', 'true');
-  urgBtn.setAttribute('aria-pressed', 'false');
-  titleInput.focus();
+  });
+  save(tasks); render();
+  form.reset(); impBtn.setAttribute('aria-pressed','true'); urgBtn.setAttribute('aria-pressed','false'); titleInput.focus();
 });
 
-
+// Clear all
 clearAllBtn.addEventListener('click', () => {
-  if (confirm(t('str.confirmClear'))) {
-    tasks = [];
-    save(tasks);
-    render();
-  }
+  if (confirm(t('str.confirmClear'))) { tasks = []; save(tasks); render(); }
 });
 
-
+// Lists / empties
 const listEls = [$('#q0'), $('#q1'), $('#q2'), $('#q3')];
 const emptyEls = [$('#q0e'), $('#q1e'), $('#q2e'), $('#q3e')];
 
-
-function qIndex(task) {
+// Quadrant index
+function qIndex(task){
   if (task.imp && task.urg) return 0;
   if (task.imp && !task.urg) return 1;
   if (!task.imp && task.urg) return 2;
   return 3;
 }
 
-
-function toggleDone(id) {
-  const tsk = tasks.find((x) => x.id === id);
-  if (!tsk) return;
-  tsk.done = !tsk.done;
-  save(tasks);
-  render();
+// Actions
+function toggleDone(id){
+  const tsk = tasks.find(x => x.id === id); if (!tsk) return;
+  tsk.done = !tsk.done; save(tasks); render();
+}
+function moveLR(id, dir){
+  const tsk = tasks.find(x => x.id === id); if (!tsk) return;
+  let idx = qIndex(tsk); idx = (idx + dir + 4) % 4;
+  if (idx===0){ tsk.imp=true; tsk.urg=true; }
+  else if (idx===1){ tsk.imp=true; tsk.urg=false; }
+  else if (idx===2){ tsk.imp=false; tsk.urg=true; }
+  else { tsk.imp=false; tsk.urg=false; }
+  save(tasks); render(); const first = listEls[idx].querySelector('.task'); if (first) first.focus();
+}
+function moveTaskPrompt(id){
+  const tsk = tasks.find(x => x.id === id); if (!tsk) return;
+  const choice = prompt(t('str.moveTitle'), String(qIndex(tsk))); if (choice===null) return;
+  const i = Number(choice);
+  if ([0,1,2,3].includes(i)){
+    if (i===0){ tsk.imp=true; tsk.urg=true; }
+    if (i===1){ tsk.imp=true; tsk.urg=false; }
+    if (i===2){ tsk.imp=false; tsk.urg=true; }
+    if (i===3){ tsk.imp=false; tsk.urg=false; }
+    save(tasks); render();
+  } else { alert(t('str.moveErr')); }
+}
+function removeTask(id){
+  const idx = tasks.findIndex(x => x.id === id); if (idx===-1) return;
+  tasks.splice(idx,1); save(tasks); render();
 }
 
-function moveLR(id, dir) {
-  const tsk = tasks
+// Create <li>
+function taskEl(task){
+  const li = document.createElement('li');
+  li.className = 'task' + (task.done ? ' done' : '');
+  li.tabIndex = 0; li.dataset.id = task.id; li.setAttribute('role','group'); li.setAttribute('aria-label', task.title);
+
+  const left = document.createElement('div');
+  const right = document.createElement('div'); right.className = 'task-actions';
+
+  const titleEl = document.createElement('div'); titleEl.className = 'title'; titleEl.textContent = task.title;
+  const noteEl = document.createElement('div'); noteEl.className = 'note'; noteEl.textContent = task.note || ''; if (!task.note) noteEl.style.display='none';
+
+  const badges = document.createElement('div'); badges.className='badges';
+  const b1 = document.createElement('span'); b1.className='badge imp'; b1.textContent = t('ui.badges.imp');
+  const b2 = document.createElement('span'); b2.className='badge urg'; b2.textContent = t('ui.badges.urg');
+  const b3 = document.createElement('span'); b3.className='badge done'; b3.textContent = t('ui.badges.done');
+  if (task.imp) badges.appendChild(b1); if (task.urg) badges.appendChild(b2); if (task.done) badges.appendChild(b3);
+
+  left.appendChild(titleEl); left.appendChild(noteEl); left.appendChild(badges);
+
+  const btnDone = document.createElement('button');
+  btnDone.className='icon-btn ok'; btnDone.type='button';
+  btnDone.title=t('ui.actionsTitles.done'); btnDone.setAttribute('aria-label',t('ui.actionsTitles.done')); btnDone.textContent='✅';
+  btnDone.addEventListener('click', () => toggleDone(task.id));
+
+  const btnMove = document.createElement('button');
+  btnMove.className='icon-btn'; btnMove.type='button';
+  btnMove.title=t('ui.actionsTitles.move'); btnMove.setAttribute('aria-label',t('ui.actionsTitles.move')); btnMove.textContent='🔁';
+  btnMove.addEventListener('click', () => moveTaskPrompt(task.id));
+
+  const btnDel = document.createElement('button');
+  btnDel.className='icon-btn del'; btnDel.type='button';
+  btnDel.title=t('ui.actionsTitles.del'); btnDel.setAttribute('aria-label',t('ui.actionsTitles.del')); btnDel.textContent='🗑️';
+  btnDel.addEventListener('click', () => removeTask(task.id));
+
+  right.appendChild(btnDone); right.appendChild(btnMove); right.appendChild(btnDel);
+  li.appendChild(left); li.appendChild(right);
+
+  li.addEventListener('keydown', (ev) => {
+    if (ev.key===' '){ ev.preventDefault(); toggleDone(task.id); }
+    else if (ev.key==='Enter'){ ev.preventDefault(); toggleDone(task.id); }
+    else if (ev.key==='Delete'){ removeTask(task.id); }
+    else if (ev.key==='ArrowLeft'){ ev.preventDefault(); moveLR(task.id,-1); }
+    else if (ev.key==='ArrowRight'){ ev.preventDefault(); moveLR(task.id, +1); }
+  });
+  return li;
+}
+
+// Render
+function render(){
+  ['q0','q1','q2','q3'].forEach((id,i)=>{
+    const ul = document.getElementById(id); ul.innerHTML='';
+    const items = tasks.filter(tk => qIndex(tk)===i);
+    if (items.length===0) document.getElementById(id+'e').style.display='block';
+    else { document.getElementById(id+'e').style.display='none'; items.forEach(tk => ul.appendChild(taskEl(tk))); }
+  });
+}
+
+// Enter to submit in title
+titleInput.addEventListener('keydown', (e) => { if (e.key==='Enter'){ e.preventDefault(); addBtn.click(); } });
+
+// Boot
+applyLang(LANG); // sets texts and renders
+const saved = localStorage.getItem(THEME_KEY); if (!saved) applyTheme('light');
+// Quality: offline only; keyboard (Tab/Enter/Space/Arrows/Delete); no console errors expected.
