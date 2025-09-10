@@ -1,22 +1,24 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="bg" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Priority Planner — Eisenhower Matrix</title>
-  <meta name="description" content="A simple one-page Priority Planner using the Eisenhower Matrix. Works offline, no dependencies." />
-  <!-- Single-file app split into HTML + CSS + JS (no external libs) -->
+  <title>Планер на приоритети — Матрица на Айзенхауер</title>
+  <meta name="description" content="Едностраничен планер на приоритети по матрицата на Айзенхауер. Работи офлайн, без зависимости." />
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <header class="row" role="banner">
     <div>
-      <h1>Priority Planner — Eisenhower Matrix</h1>
-      <p class="sub">Capture tasks and sort them by Importance × Urgency. Keyboard-friendly, offline, no libs.</p>
+      <h1 id="appTitle">Планер на приоритети — Матрица на Айзенхауер</h1>
+      <p id="appSubtitle" class="sub">Записвай задачите и ги подреждай по <strong>Важност × Спешност</strong>. Поддръжка на клавиатура, офлайн, без библиотеки.</p>
     </div>
-    <button id="themeBtn" class="theme-toggle" type="button" aria-pressed="false" title="Toggle light/dark theme">
-      <span aria-hidden="true">🌓</span> Theme
+    <button id="themeBtn" class="theme-toggle" type="button" aria-pressed="false" title="Превключи светла/тъмна тема">
+      <span aria-hidden="true">🌓</span> Тема
+    </button>
+    <button id="langBtn" class="theme-toggle" type="button" aria-pressed="false" title="Switch language to English">
+      🌐 BG
     </button>
   </header>
 
@@ -24,75 +26,66 @@
   
     <section class="card" aria-labelledby="formTitle">
       <div class="row">
-        <h2 id="formTitle" class="chip" style="margin:0">➕ Add a Task</h2>
-        <span class="chip" aria-hidden="true">Tip: Enter ⏎ to add</span>
+        <h2 id="formTitle" class="chip" style="margin:0">➕ Добави задача</h2>
+        <span id="tipAdd" class="chip" aria-hidden="true">Съвет: Enter ⏎ за добавяне</span>
       </div>
 
       <form id="taskForm" novalidate>
-        <label for="title">Title</label>
-        <input id="title" name="title" type="text" placeholder="e.g., Prepare slides for Monday meeting" autocomplete="off" required />
+        <label id="labelTitle" for="title">Заглавие</label>
+        <input id="title" name="title" type="text" placeholder="напр. Подготви слайдове за понеделник" autocomplete="off" required />
 
-        <label for="note">Optional note</label>
-        <textarea id="note" name="note" placeholder="Short details…"></textarea>
+        <label id="labelNote" for="note">Бележка (по избор)</label>
+        <textarea id="note" name="note" placeholder="Кратки детайли…"></textarea>
 
-        <div class="toggles" role="group" aria-label="Importance and urgency">
-          <button type="button" class="toggle-btn" id="impBtn" aria-pressed="true" aria-label="Toggle important">⭐ Important</button>
-          <button type="button" class="toggle-btn" id="urgBtn" aria-pressed="false" aria-label="Toggle urgent">⏰ Urgent</button>
+        <div class="toggles" role="group" aria-label="Важност и спешност">
+          <button type="button" class="toggle-btn" id="impBtn" aria-pressed="true" aria-label="Превключи важност">⭐ Важна</button>
+          <button type="button" class="toggle-btn" id="urgBtn" aria-pressed="false" aria-label="Превключи спешност">⏰ Спешна</button>
         </div>
 
         <div class="actions">
-          <button class="btn" type="submit" id="addBtn">Add Task</button>
-          <button class="btn secondary" type="button" id="clearAllBtn" title="Clear all tasks">Clear All</button>
+          <button class="btn" type="submit" id="addBtn">Добави задача</button>
+          <button class="btn secondary" type="button" id="clearAllBtn" title="Изчисти всички задачи">Изчисти всички</button>
         </div>
         <p class="err" id="errMsg" role="alert" aria-live="assertive"></p>
       </form>
     </section>
 
-  
-    <section class="grid" aria-label="Eisenhower matrix">
+    <section class="grid" aria-label="Матрица на Айзенхауер">
       <section class="col" data-q="0" aria-labelledby="q0h">
-        <h3 id="q0h">🔥 Do First <span class="hint">(Important & Urgent)</span></h3>
+        <h3 id="q0h"><span id="q0t">🔥 Изпълни веднага</span> <span class="hint" id="q0hint">(Важна и спешна)</span></h3>
         <ul class="tasks" id="q0" role="list"></ul>
-        <div class="empty" id="q0e">No tasks here yet. These are critical and time-sensitive.</div>
+        <div class="empty" id="q0e">Все още няма задачи тук. Това са критичните и спешни.</div>
       </section>
 
       <section class="col" data-q="1" aria-labelledby="q1h">
-        <h3 id="q1h">📅 Schedule <span class="hint">(Important, Not Urgent)</span></h3>
+        <h3 id="q1h"><span id="q1t">📅 Насрочи</span> <span class="hint" id="q1hint">(Важна, не спешна)</span></h3>
         <ul class="tasks" id="q1" role="list"></ul>
-        <div class="empty" id="q1e">Plan these into your calendar to avoid last-minute rush.</div>
+        <div class="empty" id="q1e">Планирай тези задачи в календара, за да избегнеш напрежение в последния момент.</div>
       </section>
 
       <section class="col" data-q="2" aria-labelledby="q2h">
-        <h3 id="q2h">📨 Delegate <span class="hint">(Not Important, Urgent)</span></h3>
+        <h3 id="q2h"><span id="q2t">📨 Делегирай</span> <span class="hint" id="q2hint">(Не е важна, но е спешна)</span></h3>
         <ul class="tasks" id="q2" role="list"></ul>
-        <div class="empty" id="q2e">Consider delegating or setting quick limits.</div>
+        <div class="empty" id="q2e">Помисли за делегиране или за кратки времеви рамки.</div>
       </section>
 
       <section class="col" data-q="3" aria-labelledby="q3h">
-        <h3 id="q3h">🧹 Eliminate <span class="hint">(Not Important, Not Urgent)</span></h3>
+        <h3 id="q3h"><span id="q3t">🧹 Елиминирай</span> <span class="hint" id="q3hint">(Не е важна, не е спешна)</span></h3>
         <ul class="tasks" id="q3" role="list"></ul>
-        <div class="empty" id="q3e">Low-value tasks. Remove or batch them tightly.</div>
+        <div class="empty" id="q3e">Ниска стойност — премахни или групирай заедно.</div>
       </section>
     </section>
 
-    <!-- =========================
-         HELP / HOW TO USE
-         ========================= -->
     <section class="help card" aria-labelledby="helpTitle">
-      <h2 id="helpTitle" style="margin:0 0 8px 0">❓ How to use</h2>
-      <ul>
-        <li>Type a <strong>Title</strong>, optionally add a note. Set <strong>⭐ Important</strong> and <strong>⏰ Urgent</strong> as needed.</li>
-        <li>Press <strong>Enter</strong> or click <em>Add Task</em>. Items appear in one of the four quadrants.</li>
-        <li><strong>Keyboard:</strong> Tab to a task → <kbd>Space</kbd>/<kbd>Enter</kbd> toggles done, <kbd>Delete</kbd> removes, <kbd>← / →</kbd> moves it.</li>
-        <li>Use the buttons: ✅ mark done, 🔁 move, 🗑 delete.</li>
-        <li>Everything is saved locally (localStorage). Works offline.</li>
-        <li>Toggle <strong>Theme</strong> (🌓) anytime.</li>
+      <h2 id="helpTitle" style="margin:0 0 8px 0">❓ Как да използвам</h2>
+      <ul id="helpList">
+       
       </ul>
     </section>
   </main>
 
   <footer role="contentinfo">
-    Built with ♥ — Priority Planner (MIT). No external libraries. © 2025
+    Изградено с ♥ — Priority Planner (MIT). Без външни библиотеки. © 2025
   </footer>
 
   <script src="app.js"></script>
